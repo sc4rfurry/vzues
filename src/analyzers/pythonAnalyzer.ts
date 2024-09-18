@@ -29,6 +29,17 @@ export class PythonAnalyzer {
             console.error('Error in analyzeFunctionComplexities:', error);
             throw new Error('Failed to analyze function complexities');
         }
+        
+    }
+
+    async analyzeComplexity(document: vscode.TextDocument): Promise<any> {
+        const overallComplexity = await this.analyzeCyclomaticComplexity(document);
+        const functionComplexities = await this.analyzeFunctionComplexities(document);
+        
+        return {
+            overallComplexity,
+            functionComplexities
+        };
     }
 
     private calculateComplexity(code: string): number {

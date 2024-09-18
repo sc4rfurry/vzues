@@ -5,41 +5,44 @@ import { ComplexityVisualizerPanel } from './panels/complexityVisualizerPanel';
 export function activate(context: vscode.ExtensionContext) {
 	// show a message in the output channel
 	vscode.window.createOutputChannel('vZeus').appendLine('vZeus is now active!');
-	// display a message in the status bar
-	vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 10000).text = 'vZeus is active';
+	const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 10000);
+	statusBarItem.text = 'vZeus: Ready';
+	statusBarItem.show();
+
 	// register the command to analyze the complexity
     let disposable = vscode.commands.registerCommand('vzeus.analyzeComplexity', async () => {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             const document = editor.document;
             if (document.languageId === 'python') {
+                statusBarItem.text = 'vZeus: Analyzing...';
                 vscode.window.withProgress({
                     location: vscode.ProgressLocation.Notification,
-                    title: "Analyzing code complexity...",
+                    title: "Analyzing Python code complexity...",
                     cancellable: false
                 }, async (progress) => {
                     try {
                         const analyzer = new PythonAnalyzer();
-                        progress.report({ increment: 30, message: "Calculating overall complexity..." });
-                        const complexity = await analyzer.analyzeCyclomaticComplexity(document);
-                        progress.report({ increment: 30, message: "Analyzing function complexities..." });
-                        const functionComplexities = await analyzer.analyzeFunctionComplexities(document);
-                        progress.report({ increment: 40, message: "Generating visualization..." });
-                        ComplexityVisualizerPanel.createOrShow(context.extensionUri, complexity, functionComplexities);
+                        progress.report({ increment: 50, message: "Calculating complexity metrics..." });
+                        const complexityData = await analyzer.analyzeComplexity(document);
+                        progress.report({ increment: 50, message: "Generating visualization..." });
+                        ComplexityVisualizerPanel.createOrShow(context.extensionUri, complexityData);
+                        statusBarItem.text = 'vZeus: Ready';
                     } catch (error: unknown) {
                         const errorMessage = error instanceof Error ? error.message : String(error);
                         vscode.window.showErrorMessage(`Failed to analyze code complexity: ${errorMessage}`);
+                        statusBarItem.text = 'vZeus: Error';
                     }
                 });
             } else {
-                vscode.window.showWarningMessage('Unsupported language. Only Python is currently supported.');
+                vscode.window.showWarningMessage('vZeus: Unsupported language. Only Python is currently supported.');
             }
         } else {
-            vscode.window.showErrorMessage('No active editor found');
+            vscode.window.showErrorMessage('vZeus: No active editor found');
         }
     });
 
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable, statusBarItem);
 }
 
 export function deactivate() {}

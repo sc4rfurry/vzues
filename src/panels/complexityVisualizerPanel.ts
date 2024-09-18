@@ -11,7 +11,7 @@ export class ComplexityVisualizerPanel {
         this._panel.webview.html = this._getWebviewContent(this._panel.webview, extensionUri);
     }
 
-    public static createOrShow(extensionUri: vscode.Uri, complexity: number, functionComplexities: { [key: string]: number }) {
+    public static createOrShow(extensionUri: vscode.Uri, complexityData: any) {
         const column = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.viewColumn : undefined;
 
         if (ComplexityVisualizerPanel.currentPanel) {
@@ -19,7 +19,7 @@ export class ComplexityVisualizerPanel {
         } else {
             const panel = vscode.window.createWebviewPanel(
                 'complexityVisualizer',
-                'Code Complexity Visualization',
+                'Python Code Complexity Visualization',
                 column || vscode.ViewColumn.One,
                 {
                     enableScripts: true,
@@ -30,27 +30,28 @@ export class ComplexityVisualizerPanel {
             ComplexityVisualizerPanel.currentPanel = new ComplexityVisualizerPanel(panel, extensionUri);
         }
 
-        ComplexityVisualizerPanel.currentPanel._update(complexity, functionComplexities);
+        ComplexityVisualizerPanel.currentPanel._update(complexityData);
     }
 
-    private _update(complexity: number, functionComplexities: { [key: string]: number }) {
-        this._panel.webview.postMessage({ command: 'update', complexity, functionComplexities });
+    private _update(complexityData: any) {
+        this._panel.webview.postMessage({ command: 'update', data: complexityData });
     }
 
     private _getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri) {
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'main.js'));
+        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'style.css'));
 
         return `<!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Code Complexity Visualization</title>
+            <title>Python Code Complexity Visualization</title>
+            <link rel="stylesheet" type="text/css" href="${styleUri}">
         </head>
         <body>
-            <h1>Code Complexity Visualization</h1>
-            <div id="complexity"></div>
-            <div id="functionComplexities"></div>
+            <h1>Python Code Complexity Visualization</h1>
+            <div id="complexityTree"></div>
             <script src="${scriptUri}"></script>
         </body>
         </html>`;
